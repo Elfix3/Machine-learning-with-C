@@ -5,7 +5,8 @@
 #include "time.h"
 
 //Data Set size
-#define DATA_SIZE 1000
+#define SQUARE(X)   ((X)*(X))
+#define DATA_SIZE 100
 
 //Model
 struct {
@@ -54,7 +55,7 @@ void init_data_linear_dependance(double **v, size_t size, double *x, double w, d
         
     } else {
         printf("Already initalized\n");
-        return; //already initalized
+        return;
     }
 }
 
@@ -62,20 +63,28 @@ void init_data_linear_dependance(double **v, size_t size, double *x, double w, d
 
 
 //forward propagation
-double model_output(Model *m, double input){
+double model_predict(Model *m, double input){
     return m->w*input + m->b;
+}
+
+//Loss function MSE
+double loss(Model *m, double *x, double *y){
+    double loss = 0;
+    for(int i = 0; i<DATA_SIZE; i++){
+        loss += SQUARE((model_predict(m,x[i]) - y[i]));
+    }
+    return loss/(2*DATA_SIZE);
 }
 
 
 //gradients computation
-
 void grad_update(Model *m, double lr){
     double dW = 0;
     double dB = 0;
 
     for(int i = 0; i<DATA_SIZE;i++){    
-        dW += x[i]*(model_output(m,x[i]) - y[i]);
-        dB += (model_output(m,x[i]) - y[i]);
+        dW += x[i]*(model_predict(m,x[i]) - y[i]);
+        dB += (model_predict(m,x[i]) - y[i]);
     }
     dW /= DATA_SIZE;
     dB /= DATA_SIZE;
@@ -92,7 +101,7 @@ void model_info(Model *m){
     if (m == NULL) {
         printf("Error, model unitialized\n");
     } else {
-        printf("%f*x + %f\n",m->w,m->b);
+        printf("Model : %f*x + %f\tLoss : %f\n",m->w,m->b,loss(m,x,y));
     }
 }
 
@@ -113,30 +122,15 @@ int main(){
     initModel(&model, 0.0f, 0.0f);
     init_data(&x,DATA_SIZE);
     init_data_linear_dependance(&y, DATA_SIZE, x, 1.3f, 4.0f, 0.3f);
-    //print_data(x,DATA_SIZE);
-    //print_data(y,DATA_SIZE);
-
-
     
+
+
     model_info(model);
 
-    for(int epoch = 0; epoch <100000; epoch++){
-        grad_update(model,0.001);
-        
+    for(int epoch = 0; epoch <10000; epoch++){
+        grad_update(model,0.01);
     }
     model_info(model);
-
-
-    //grad_update()
-    /* FILE *gp = popen("gnuplot -persistent", "w");
-
-        fprintf(gp, "plot '-' with points\n");
-        for(size_t i = 0; i < DATA_SIZE; i++){
-            fprintf(gp, "%f %f\n", x[i], y[i]);
-        }
-        fprintf(gp, "e\n");
-        pclose(gp); */
-
 
     free(model);
     free(x);
